@@ -328,7 +328,7 @@ export default function App() {
   const [copilotSection, setCopilotSection] = useState('reality')
 
   // Form
-  const [model, setModel] = useState('claude-sonnet-4-6')
+  const [model, setModel] = useState('anthropic/claude-sonnet-4-5')
   const [role, setRole] = useState('')
   const [action, setAction] = useState('')
   const [context, setContext] = useState('')
