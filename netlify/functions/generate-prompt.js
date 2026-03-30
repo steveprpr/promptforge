@@ -1,5 +1,8 @@
-const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
-const ANTHROPIC_VERSION = '2023-06-01'
+// OpenRouter API proxy — keeps OPENROUTER_API_KEY server-side
+// OpenRouter uses the OpenAI-compatible chat completions format.
+// Docs: https://openrouter.ai/docs
+
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -9,82 +12,59 @@ const CORS_HEADERS = {
 }
 
 export const handler = async (event) => {
-  // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: CORS_HEADERS, body: '' }
   }
 
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers: CORS_HEADERS,
-      body: JSON.stringify({ error: 'Method not allowed' }),
-    }
+    return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Method not allowed' }) }
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  const apiKey = process.env.OPENROUTER_API_KEY
   if (!apiKey) {
-    return {
-      statusCode: 500,
-      headers: CORS_HEADERS,
-      body: JSON.stringify({ error: 'ANTHROPIC_API_KEY environment variable is not set' }),
-    }
+    return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: 'OPENROUTER_API_KEY environment variable is not set' }) }
   }
 
   let body
   try {
     body = JSON.parse(event.body)
   } catch {
-    return {
-      statusCode: 400,
-      headers: CORS_HEADERS,
-      body: JSON.stringify({ error: 'Invalid JSON in request body' }),
-    }
+    return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Invalid JSON in request body' }) }
   }
 
   const { system, messages, model, max_tokens } = body
 
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
-    return {
-      statusCode: 400,
-      headers: CORS_HEADERS,
-      body: JSON.stringify({ error: 'messages array is required and must not be empty' }),
-    }
+    return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'messages array is required' }) }
   }
 
-  // Only proxy Anthropic models — GPT/Gemini/Copilot calls are client-side
-  if (!model || !model.startsWith('claude-')) {
-    return {
-      statusCode: 400,
-      headers: CORS_HEADERS,
-      body: JSON.stringify({ error: `Model "${model}" is not an Anthropic model. Only claude-* models are proxied by this function.` }),
-    }
+  if (!model) {
+    return { statusCode: 400, headers: CORS_HEADERS, body: JSON.stringify({ error: 'model is required' }) }
   }
 
-  const upstream = {
-    model,
-    max_tokens: max_tokens ?? 2048,
-    messages,
-    ...(system ? { system } : {}),
-  }
+  // OpenRouter uses OpenAI format: system prompt goes as first message with role "system"
+  const fullMessages = system
+    ? [{ role: 'system', content: system }, ...messages]
+    : messages
 
   let response
   try {
-    response = await fetch(ANTHROPIC_API_URL, {
+    response = await fetch(OPENROUTER_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': ANTHROPIC_VERSION,
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://promptforge.netlify.app',
+        'X-Title': 'PromptForge',
       },
-      body: JSON.stringify(upstream),
+      body: JSON.stringify({
+        model,
+        messages: fullMessages,
+        max_tokens: max_tokens ?? 2048,
+      }),
     })
   } catch (err) {
-    return {
-      statusCode: 502,
-      headers: CORS_HEADERS,
-      body: JSON.stringify({ error: 'Failed to reach Anthropic API', detail: err.message }),
-    }
+    return { statusCode: 502, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Failed to reach OpenRouter API', detail: err.message }) }
   }
 
   const data = await response.json()
@@ -93,16 +73,16 @@ export const handler = async (event) => {
     return {
       statusCode: response.status,
       headers: CORS_HEADERS,
-      body: JSON.stringify({
-        error: data?.error?.message ?? 'Anthropic API error',
-        type: data?.error?.type ?? 'api_error',
-      }),
+      body: JSON.stringify({ error: data?.error?.message ?? 'OpenRouter API error' }),
     }
   }
 
-  return {
-    statusCode: 200,
-    headers: CORS_HEADERS,
-    body: JSON.stringify(data),
+  // Normalize to the shape the frontend expects: data.content[0].text
+  // OpenRouter returns: data.choices[0].message.content
+  const normalized = {
+    ...data,
+    content: [{ type: 'text', text: data.choices?.[0]?.message?.content ?? '' }],
   }
+
+  return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify(normalized) }
 }

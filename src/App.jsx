@@ -8,16 +8,20 @@ const C = {
   text: '#e2e8f0', textMuted: '#64748b', textDim: '#94a3b8',
 }
 
+// OpenRouter model IDs — see https://openrouter.ai/models
 const MODELS = [
-  { id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4', group: 'Anthropic' },
-  { id: 'claude-opus-4-6', label: 'Claude Opus 4', group: 'Anthropic' },
-  { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', group: 'Anthropic' },
-  { id: 'gpt-4o', label: 'GPT-4o', group: 'OpenAI' },
-  { id: 'gpt-4o-mini', label: 'GPT-4o mini', group: 'OpenAI' },
-  { id: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro', group: 'Google' },
+  { id: 'anthropic/claude-sonnet-4-5', label: 'Claude Sonnet 4', group: 'Anthropic' },
+  { id: 'anthropic/claude-opus-4-5', label: 'Claude Opus 4', group: 'Anthropic' },
+  { id: 'anthropic/claude-haiku-4-5', label: 'Claude Haiku 4.5', group: 'Anthropic' },
+  { id: 'openai/gpt-4o', label: 'GPT-4o', group: 'OpenAI' },
+  { id: 'openai/gpt-4o-mini', label: 'GPT-4o mini', group: 'OpenAI' },
+  { id: 'google/gemini-pro-1.5', label: 'Gemini 1.5 Pro', group: 'Google' },
   { id: 'copilot-work', label: 'Microsoft Copilot (Work)', group: 'Microsoft' },
   { id: 'm365-copilot', label: 'M365 Copilot', group: 'Microsoft' },
 ]
+
+// Copilot is not available via OpenRouter — use a fast default for generation
+const COPILOT_FALLBACK_MODEL = 'anthropic/claude-haiku-4-5'
 
 const isCopilotModel = (id) => id === 'copilot-work' || id === 'm365-copilot'
 
@@ -365,10 +369,12 @@ export default function App() {
   const copilotMode = isCopilotModel(model)
 
   const callAPI = async (system, userContent) => {
+    // Use selected model; fall back to Haiku for Copilot (not on OpenRouter)
+    const apiModel = isCopilotModel(model) ? COPILOT_FALLBACK_MODEL : model
     const res = await fetch('/.netlify/functions/generate-prompt', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', messages: [{ role: 'user', content: userContent }], system, max_tokens: 2048 }),
+      body: JSON.stringify({ model: apiModel, messages: [{ role: 'user', content: userContent }], system, max_tokens: 2048 }),
     })
     if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `HTTP ${res.status}`) }
     const data = await res.json()
