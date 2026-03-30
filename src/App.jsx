@@ -9,11 +9,13 @@ const C = {
 }
 
 // OpenRouter model IDs + pricing — see https://openrouter.ai/models
-// Grouped by cost tier. Default = cheapest reliable option.
+// Grouped by cost tier. Default = best value option.
 const MODELS = [
   // Fast & Cheap
-  { id: 'openai/gpt-4o-mini',                    label: 'GPT-4o mini',          price: '$0.15/1M',  group: 'Fast & Cheap' },
+  { id: 'deepseek/deepseek-chat',                label: 'DeepSeek V3',          price: '$0.14/1M',  group: 'Fast & Cheap' },
+  { id: 'deepseek/deepseek-r1',                  label: 'DeepSeek R1',          price: '$0.55/1M',  group: 'Fast & Cheap' },
   { id: 'google/gemini-flash-1.5',               label: 'Gemini Flash 1.5',     price: '$0.08/1M',  group: 'Fast & Cheap' },
+  { id: 'openai/gpt-4o-mini',                    label: 'GPT-4o mini',          price: '$0.15/1M',  group: 'Fast & Cheap' },
   { id: 'anthropic/claude-haiku-4-5',            label: 'Claude Haiku 4.5',     price: '$0.80/1M',  group: 'Fast & Cheap' },
   { id: 'meta-llama/llama-3.3-70b-instruct',     label: 'Llama 3.3 70B',        price: '$0.39/1M',  group: 'Fast & Cheap' },
   // Balanced
@@ -27,10 +29,10 @@ const MODELS = [
   { id: 'm365-copilot',  label: 'M365 Copilot',             price: 'mode only', group: 'Microsoft' },
 ]
 
-const DEFAULT_MODEL = 'openai/gpt-4o-mini'
+const DEFAULT_MODEL = 'deepseek/deepseek-chat'
 
-// Copilot is not on OpenRouter — fall back to cheapest for actual generation
-const COPILOT_FALLBACK_MODEL = 'openai/gpt-4o-mini'
+// Copilot is not on OpenRouter — fall back to DeepSeek V3 for actual generation
+const COPILOT_FALLBACK_MODEL = 'deepseek/deepseek-chat'
 
 const isCopilotModel = (id) => id === 'copilot-work' || id === 'm365-copilot'
 
