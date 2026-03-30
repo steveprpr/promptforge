@@ -8,20 +8,29 @@ const C = {
   text: '#e2e8f0', textMuted: '#64748b', textDim: '#94a3b8',
 }
 
-// OpenRouter model IDs — see https://openrouter.ai/models
+// OpenRouter model IDs + pricing — see https://openrouter.ai/models
+// Grouped by cost tier. Default = cheapest reliable option.
 const MODELS = [
-  { id: 'anthropic/claude-sonnet-4-5', label: 'Claude Sonnet 4', group: 'Anthropic' },
-  { id: 'anthropic/claude-opus-4-5', label: 'Claude Opus 4', group: 'Anthropic' },
-  { id: 'anthropic/claude-haiku-4-5', label: 'Claude Haiku 4.5', group: 'Anthropic' },
-  { id: 'openai/gpt-4o', label: 'GPT-4o', group: 'OpenAI' },
-  { id: 'openai/gpt-4o-mini', label: 'GPT-4o mini', group: 'OpenAI' },
-  { id: 'google/gemini-pro-1.5', label: 'Gemini 1.5 Pro', group: 'Google' },
-  { id: 'copilot-work', label: 'Microsoft Copilot (Work)', group: 'Microsoft' },
-  { id: 'm365-copilot', label: 'M365 Copilot', group: 'Microsoft' },
+  // Fast & Cheap
+  { id: 'openai/gpt-4o-mini',                    label: 'GPT-4o mini',          price: '$0.15/1M',  group: 'Fast & Cheap' },
+  { id: 'google/gemini-flash-1.5',               label: 'Gemini Flash 1.5',     price: '$0.08/1M',  group: 'Fast & Cheap' },
+  { id: 'anthropic/claude-haiku-4-5',            label: 'Claude Haiku 4.5',     price: '$0.80/1M',  group: 'Fast & Cheap' },
+  { id: 'meta-llama/llama-3.3-70b-instruct',     label: 'Llama 3.3 70B',        price: '$0.39/1M',  group: 'Fast & Cheap' },
+  // Balanced
+  { id: 'openai/gpt-4o',                         label: 'GPT-4o',               price: '$2.50/1M',  group: 'Balanced' },
+  { id: 'google/gemini-pro-1.5',                 label: 'Gemini Pro 1.5',       price: '$1.25/1M',  group: 'Balanced' },
+  { id: 'anthropic/claude-sonnet-4-5',           label: 'Claude Sonnet 4',      price: '$3/1M',     group: 'Balanced' },
+  // Powerful
+  { id: 'anthropic/claude-opus-4-5',             label: 'Claude Opus 4',        price: '$15/1M',    group: 'Powerful' },
+  // Special modes (Copilot — not callable via OpenRouter, triggers Copilot system prompt)
+  { id: 'copilot-work',  label: 'Microsoft Copilot (Work)', price: 'mode only', group: 'Microsoft' },
+  { id: 'm365-copilot',  label: 'M365 Copilot',             price: 'mode only', group: 'Microsoft' },
 ]
 
-// Copilot is not available via OpenRouter — use a fast default for generation
-const COPILOT_FALLBACK_MODEL = 'anthropic/claude-haiku-4-5'
+const DEFAULT_MODEL = 'openai/gpt-4o-mini'
+
+// Copilot is not on OpenRouter — fall back to cheapest for actual generation
+const COPILOT_FALLBACK_MODEL = 'openai/gpt-4o-mini'
 
 const isCopilotModel = (id) => id === 'copilot-work' || id === 'm365-copilot'
 
@@ -328,7 +337,7 @@ export default function App() {
   const [copilotSection, setCopilotSection] = useState('reality')
 
   // Form
-  const [model, setModel] = useState('anthropic/claude-sonnet-4-5')
+  const [model, setModel] = useState(DEFAULT_MODEL)
   const [role, setRole] = useState('')
   const [action, setAction] = useState('')
   const [context, setContext] = useState('')
@@ -787,11 +796,13 @@ export default function App() {
             <span style={{ fontSize: 11, color: C.textMuted, background: C.bg, padding: '2px 8px', borderRadius: 4, border: `1px solid ${C.border}` }}>RACE Framework</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 11, color: C.textMuted }}>Target model:</span>
-            <select value={model} onChange={e => setModel(e.target.value)} style={{ background: C.bg, border: `1px solid ${copilotMode ? C.copilot : C.border}`, borderRadius: 6, color: copilotMode ? C.copilot : C.text, padding: '6px 10px', fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", outline: 'none' }}>
-              {['Anthropic', 'OpenAI', 'Google', 'Microsoft'].map(g => (
+            <span style={{ fontSize: 11, color: C.textMuted }}>Model:</span>
+            <select value={model} onChange={e => setModel(e.target.value)} style={{ background: C.bg, border: `1px solid ${copilotMode ? C.copilot : C.border}`, borderRadius: 6, color: copilotMode ? C.copilot : C.text, padding: '6px 10px', fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", outline: 'none', maxWidth: 220 }}>
+              {['Fast & Cheap', 'Balanced', 'Powerful', 'Microsoft'].map(g => (
                 <optgroup key={g} label={g}>
-                  {MODELS.filter(m => m.group === g).map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+                  {MODELS.filter(m => m.group === g).map(m => (
+                    <option key={m.id} value={m.id}>{m.label} — {m.price}</option>
+                  ))}
                 </optgroup>
               ))}
             </select>
