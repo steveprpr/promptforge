@@ -613,8 +613,38 @@ export default function App() {
   )
 
   // ── Copilot Tab ───────────────────────────────────────────────
+  const SECTION_META = {
+    reality:    { icon: '🔍', title: 'Reality Check',     desc: 'Understand what Microsoft Copilot can and cannot do before you waste time fighting it. Each card below is a common frustration — green FIXABLE means the right prompt fixes it, red HARD LIMIT means it\'s a fundamental architectural constraint no prompt can overcome.' },
+    prefixes:   { icon: '⚡', title: 'Power Prefixes',    desc: 'Copy-paste openers that instantly improve any Copilot prompt. Drop one at the top of your prompt to set the role, lock the output format, kill AI-speak, or frame your request for M365 apps like Word, Teams, or Outlook.' },
+    templates:  { icon: '📋', title: 'Work Templates',    desc: 'Pre-built, Copilot-optimized prompts for common federal workplace tasks. Each template is editable — replace the bracketed [PLACEHOLDERS] with your real content, then copy and paste directly into Copilot.' },
+    translator: { icon: '🔄', title: 'Prompt Translator', desc: 'Have a prompt that works well in ChatGPT or Claude but falls flat in Copilot? Paste it here and the AI will rewrite it specifically for Copilot\'s constraints — shorter, single-task, explicit format rules — and explain every change it made.' },
+  }
+
   const copilotTab = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+      {/* Tab intro */}
+      <div style={{ background: C.copilot + '12', border: `1px solid ${C.copilot}33`, borderRadius: 12, padding: '16px 20px' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+          <span style={{ fontSize: 28, flexShrink: 0 }}>🪟</span>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: C.copilot, marginBottom: 4 }}>Microsoft Copilot Toolkit</div>
+            <p style={{ margin: 0, fontSize: 13, color: C.textDim, lineHeight: 1.65 }}>
+              Microsoft Copilot is built into M365 (Word, Teams, Outlook) but behaves very differently from ChatGPT or Claude. It has no memory between sessions, struggles with multi-step tasks, and defaults to generic AI-speak without explicit instructions.
+              This toolkit gives you everything you need to get professional, consistent output from Copilot at work.
+            </p>
+            <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
+              {[['🔍 Reality Check', 'Know the limits'], ['⚡ Power Prefixes', 'Instant prompt upgrades'], ['📋 Work Templates', 'Ready-to-use prompts'], ['🔄 Translator', 'Convert any prompt for Copilot']].map(([label, sub]) => (
+                <div key={label} style={{ fontSize: 11, color: C.textMuted }}>
+                  <span style={{ color: C.copilot, fontWeight: 600 }}>{label}</span> — {sub}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Section nav */}
       <div style={{ display: 'flex', gap: 4, background: C.surface, borderRadius: 10, padding: 4, border: `1px solid ${C.border}` }}>
         {[['reality', 'Reality Check'], ['prefixes', 'Power Prefixes'], ['templates', 'Work Templates'], ['translator', 'Prompt Translator']].map(([id, lbl]) => (
           <button key={id} onClick={() => setCopilotSection(id)} style={{
@@ -625,6 +655,17 @@ export default function App() {
           }}>{lbl}</button>
         ))}
       </div>
+
+      {/* Section description */}
+      {SECTION_META[copilotSection] && (
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 16px', background: C.surfaceHigh, borderRadius: 8, border: `1px solid ${C.border}` }}>
+          <span style={{ fontSize: 20, flexShrink: 0 }}>{SECTION_META[copilotSection].icon}</span>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 3 }}>{SECTION_META[copilotSection].title}</div>
+            <p style={{ margin: 0, fontSize: 12, color: C.textMuted, lineHeight: 1.6 }}>{SECTION_META[copilotSection].desc}</p>
+          </div>
+        </div>
+      )}
 
       {copilotSection === 'reality' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
